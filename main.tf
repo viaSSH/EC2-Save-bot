@@ -23,7 +23,7 @@ resource "aws_iam_role" "lambda_ec2_role" {
             Action = "sts:AssumeRole"
             Effect = "Allow"
             Principal = {
-            Service = "lambda.amazonaws.com"
+            Service = ["lambda.amazonaws.com", "events.amazonaws.com"]
             }
         }
         ]
@@ -43,6 +43,7 @@ resource "aws_iam_role" "lambda_ec2_role" {
         ]
         })
     }
+
 }
 
 resource "aws_lambda_function" "ec2_bot_lambda" {
@@ -60,6 +61,15 @@ resource "aws_lambda_function" "ec2_bot_lambda" {
     }
   
 }
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventbridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ec2_bot_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = module.eventbridge.eventbridge_rule_arns.crons
+}
+
 
 module "eventbridge" {
   source = "terraform-aws-modules/eventbridge/aws"
